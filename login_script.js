@@ -1,22 +1,31 @@
-const REQUIRED_ORIGIN_PATTERN = 
-  /^((\*|([\w_-]{2,}))\.)*(([\w_-]{2,})\.)+(\w{2,})(\,((\*|([\w_-]{2,}))\.)*(([\w_-]{2,})\.)+(\w{2,}))*$/
+const REQUIRED_ORIGIN_PATTERN = /^https?:\/\/[^,\s]+(?:,[^,\s]+)*$/;
 
-  const ORIGINS = process.env.ORIGINS;
+let ORIGINS = process.env.ORIGINS;
 
-  if (!ORIGINS || typeof ORIGINS !== "string" || !ORIGINS.match(REQUIRED_ORIGIN_PATTERN)) {
-    console.error("⚠️ process.env.ORIGINS 無效或格式錯誤。你提供的值是：", ORIGINS);
-    throw new Error('❌ process.env.ORIGINS 必須是用英文逗號分隔的 origin 列表，例如：https://site1.com,https://site2.com');
-  }
+if (!ORIGINS || typeof ORIGINS !== "string") {
+  console.warn("⚠️ ORIGINS 未設定或不是字串，預設允許任意來源（僅限開發測試）");
+  ORIGINS = "*";
+}
 
+const isValidOriginList = ORIGINS === "*" || ORIGINS.split(",").every(origin =>
+  /^https?:\/\/[^,\s]+$/.test(origin.trim())
+);
+
+if (!isValidOriginList) {
+  console.warn("⚠️ ORIGINS 格式不標準，但仍嘗試繼續。你提供的值：", ORIGINS);
+  // 若想在生產環境嚴格限制，可以改為 throw Error
+}
+
+const origins = ORIGINS === "*" ? ["*"] : ORIGINS.split(",").map(o => o.trim());
 
 module.exports = (oauthProvider, message, content) => `
 <script>
 (function() {
   function contains(arr, elem) {
     for (var i = 0; i < arr.length; i++) {
+      if (arr[i] === "*") return true;
       if (arr[i].indexOf('*') >= 0) {
         const regex = new RegExp(arr[i].replaceAll('.', '\\\\.').replaceAll('*', '[\\\\w_-]+'))
-        console.log(regex)
         if (elem.match(regex) !== null) {
           return true;
         }
@@ -28,21 +37,22 @@ module.exports = (oauthProvider, message, content) => `
     }
     return false;
   }
+
   function recieveMessage(e) {
-    console.log("recieveMessage %o", e)
-    if (!contains(${JSON.stringify(origins)}, e.origin.replace('https://', 'http://').replace('http://', ''))) {
+    console.log("recieveMessage %o", e);
+    const normalizedOrigin = e.origin.replace('https://', 'http://').replace('http://', '');
+    if (!contains(${JSON.stringify(origins)}, normalizedOrigin)) {
       console.log('Invalid origin: %s', e.origin);
       return;
     }
-    // send message to main window with da app
     window.opener.postMessage(
       'authorization:${oauthProvider}:${message}:${JSON.stringify(content)}',
       e.origin
-    )
+    );
   }
-  window.addEventListener("message", recieveMessage, false)
-  // Start handshare with parent
-  console.log("Sending message: %o", "${oauthProvider}")
-  window.opener.postMessage("authorizing:${oauthProvider}", "*")
+
+  window.addEventListener("message", recieveMessage, false);
+  console.log("Sending message: %o", "${oauthProvider}");
+  window.opener.postMessage("authorizing:${oauthProvider}", "*");
 })()
-</script>`
+</script>`;
