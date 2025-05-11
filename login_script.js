@@ -1,11 +1,12 @@
 const REQUIRED_ORIGIN_PATTERN = 
   /^((\*|([\w_-]{2,}))\.)*(([\w_-]{2,})\.)+(\w{2,})(\,((\*|([\w_-]{2,}))\.)*(([\w_-]{2,})\.)+(\w{2,}))*$/
 
-if (!process.env.ORIGINS.match(REQUIRED_ORIGIN_PATTERN)) {
-  throw new Error('process.env.ORIGINS MUST be comma separated list \
-    of origins that login can succeed on.')
-}
-const origins = process.env.ORIGINS.split(',')
+  const ORIGINS = process.env.ORIGINS;
+
+  if (!ORIGINS || typeof ORIGINS !== "string" || !ORIGINS.match(REQUIRED_ORIGIN_PATTERN)) {
+    console.error("⚠️ process.env.ORIGINS 無效或格式錯誤。你提供的值是：", ORIGINS);
+    throw new Error('❌ process.env.ORIGINS 必須是用英文逗號分隔的 origin 列表，例如：https://site1.com,https://site2.com');
+  }
 
 
 module.exports = (oauthProvider, message, content) => `
