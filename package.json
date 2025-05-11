@@ -20,7 +20,7 @@
   "author": "Vaclav Klecanda <vencax77@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16",
+    "dotenv": "^16.5.0",
     "express": "^4.15.2",
     "randomstring": "^1.2",
     "simple-oauth2": "^5"
