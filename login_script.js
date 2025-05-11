@@ -3,7 +3,7 @@ const REQUIRED_ORIGIN_PATTERN = /^https?:\/\/[^,\s]+(?:,[^,\s]+)*$/;
 let ORIGINS = process.env.ORIGINS;
 
 if (!ORIGINS || typeof ORIGINS !== "string") {
-  console.warn("⚠️ ORIGINS 未設定或不是字串，預設允許任意來源（僅限開發測試）");
+  console.warn("ORIGINS 未設定或不是字串，預設允許任意來源（僅限開發測試）");
   ORIGINS = "*";
 }
 
@@ -12,7 +12,7 @@ const isValidOriginList = ORIGINS === "*" || ORIGINS.split(",").every(origin =>
 );
 
 if (!isValidOriginList) {
-  console.warn("⚠️ ORIGINS 格式不標準，但仍嘗試繼續。你提供的值：", ORIGINS);
+  console.warn("ORIGINS 格式不標準，但仍嘗試繼續。你提供的值：", ORIGINS);
   // 若想在生產環境嚴格限制，可以改為 throw Error
 }
 
